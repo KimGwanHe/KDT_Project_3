@@ -1,17 +1,36 @@
-import React from 'react';
-import { View, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { Link } from 'expo-router';
 
 export default function BottomTab() {
+
+  const handleUserPress = () => {
+    Alert.alert(
+      "사용자 선택",
+      "원하는 기능을 선택하시오.",
+      [
+        { text: "로그아웃", onPress: () => console.log("Log Out pressed") },
+        { text: "회원탈퇴", onPress: () => console.log("Delete Account pressed") },
+        { text: "취소", style: "cancel" }
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity>
-        <FontAwesome name="home" size={28} color="black" />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.addButton}>
-      <Image source={require('../assets/images/BottomTab+.png')} style={styles.addButtonImage} />
-      </TouchableOpacity>
-      <TouchableOpacity>
+      <Link href="/" asChild>
+        <TouchableOpacity>
+          <FontAwesome name="home" size={28} color="black" />
+        </TouchableOpacity>
+      </Link>
+      <Link href="/Live" asChild>
+        <TouchableOpacity style={styles.addButton}>
+          <Image source={require('../assets/images/BottomTab+.png')} style={styles.addButtonImage} />
+        </TouchableOpacity>
+      </Link>
+      <TouchableOpacity onPress={handleUserPress}>
         <FontAwesome name="user" size={28} color="black" />
       </TouchableOpacity>
     </View>

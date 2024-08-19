@@ -8,7 +8,7 @@ export default function LiveStreamCard({ streamerName }: { streamerName: string 
       <Image source={require('../assets/images/Liveimage.png')} style={styles.liveImage} />
       <Text style={styles.streamerName}>{streamerName} 님</Text>
       <TouchableOpacity style={styles.playButton}>
-        <FontAwesome name="play" size={22} color="white" />
+      <Image source={require('../assets/images/play.png')} style={styles.playImage} />
       </TouchableOpacity>
     </View>
   );
@@ -36,7 +36,11 @@ const styles = StyleSheet.create({
   },
   playButton: {
     backgroundColor: 'black',
-    padding: 15,
+    padding: 0,
     borderRadius: 30,
+  },
+  playImage: {
+    width: 35,
+    height: 35,
   },
 });

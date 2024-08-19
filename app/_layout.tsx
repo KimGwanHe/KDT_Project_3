@@ -5,9 +5,9 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+import { useColorScheme } from '../hooks/useColorScheme';
+import Live from './Live';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -29,7 +29,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/* 메인 화면으로 바로 연결 */}
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        {/* 기타 라우트가 필요한 경우 여기에 추가 */}
         <Stack.Screen name="+not-found" />
       </Stack>
     </ThemeProvider>
