@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { Camera, CameraType } from 'expo-camera';
 
+
 export default function Backcamera() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   // const [facing, setFacing] = useState(CameraType.back);
-  const [facing, setFacing] = useState<typeof CameraType[keyof typeof CameraType]>(CameraType.front);
+  const [facing, setFacing] = useState<typeof CameraType[keyof typeof CameraType]>(CameraType.back);
 
 
   useEffect(() => {
@@ -30,17 +31,17 @@ export default function Backcamera() {
     );
   }
 
-  // function toggleCameraFacing() {
-  //   setFacing(facing === CameraType.back ? CameraType.front : CameraType.back);
-  // }
+  function toggleCameraFacing() {
+    setFacing(facing === CameraType.back ? CameraType.front : CameraType.back);
+  }
 
   return (
     <View style={styles.container}>
       <Camera style={styles.camera} type={facing}>
         <View style={styles.buttonContainer}>
-          {/* <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
+          <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
             <Text style={styles.buttonText}>카메라 전환</Text>
-          </TouchableOpacity> */}
+          </TouchableOpacity>
         </View>
       </Camera>
     </View>

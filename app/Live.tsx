@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import TopBar from '../components/LiveTop';
-import BackgroundView from '../components/Backcamera';
+import Backcamera from '../components/Backcamera';
 import MessageInput from '../components/Message';
 
 export default function Live() {
   return (
     <View style={styles.container}>
-      <BackgroundView />
+      <Backcamera />
       <TopBar />
       <View style={styles.messageContainer}>
         <MessageInput />
