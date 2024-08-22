@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "3st-Project",
-    "slug": "3st-Project",
+    "name": "my-app",
+    "slug": "my-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
       "supportsTablet": true
@@ -18,7 +18,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#FFFFFF"
       }
     },
     "web": {
@@ -28,10 +28,14 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
-    ],
-    "experiments": {
-      "typedRoutes": true
-    }
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow my-app to access your camera",
+          "microphonePermission": "Allow my-app to access your microphone",
+          "recordAudioAndroid": true
+        }
+      ]
+    ]
   }
 }
