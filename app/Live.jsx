@@ -26,16 +26,16 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     position: 'relative',
-    backgroundColor: 'transparent', // 투명한 배경
+    backgroundColor: 'transparent',
   },
   messageContainer: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'transparent', // 투명한 배경
-    opacity: 0.8, // 반투명 효과
+    backgroundColor: 'transparent',
+    opacity: 0.8,
     height: 130,
-    zIndex: 1000, // 카메라 위에 배치되도록 설정
+    zIndex: 1000,
   },
 });

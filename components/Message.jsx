@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0)',
   },
   messageBubble: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
     padding: 5,
     borderRadius: 10,
     alignSelf: 'flex-start',
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   sendButton: {
-    backgroundColor: 'rgba(135, 206, 250, 1)',
+    backgroundColor: 'rgba(135, 206, 250, 0.8)',
     borderRadius: 20,
     padding: 10,
     marginLeft: 10,
