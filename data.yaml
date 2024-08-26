@@ -1,0 +1,5 @@
+train: C:/Users/황동현/Desktop/YOLO2/car2/images/train
+val: C:/Users/황동현/Desktop/YOLO2/fcar2/images/val
+
+nc: 1
+names: ['license_plate']
