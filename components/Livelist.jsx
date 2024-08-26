@@ -1,14 +1,16 @@
+// Livelist.jsx
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
-export default function LiveStreamCard({ nickname, onJoin }) {
+
+export default function LiveStreamCard({ servername, onconnect }) {
   return (
-    <TouchableOpacity onPress={onJoin} style={styles.card}>
+    <TouchableOpacity style={styles.card} onPress={()=>onconnect(servername)}>
+      {/* 전체 카드가 클릭 가능하도록 설정 */}
       <Image source={require('../assets/images/Liveimage.png')} style={styles.liveImage} />
-      <Text style={styles.streamerName}>{nickname} 님</Text>
-      <TouchableOpacity style={styles.playButton} onPress={onJoin}>
-        <Image source={require('../assets/images/play.png')} style={styles.playImage} />
-      </TouchableOpacity>
+      <Text style={styles.streamerName}>{servername} 님</Text>
+      <Image source={require('../assets/images/play.png')} style={styles.playButton} />
     </TouchableOpacity>
   );
 }
@@ -21,7 +23,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   liveImage: {
     width: 30,
@@ -30,18 +31,13 @@ const styles = StyleSheet.create({
   },
   streamerName: {
     fontSize: 18,
-    marginRight: 180,
+    fontWeight: 'bold',
     marginTop: 20,
+    marginLeft: 15,
   },
   playButton: {
-    backgroundColor: 'black',
-    padding: 10,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  playImage: {
-    width: 35,
-    height: 35,
+    width: 40,
+    height: 40,
+    marginLeft: 150,
   },
 });

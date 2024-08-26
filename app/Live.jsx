@@ -1,60 +1,88 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Button, Alert } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import TopBar from '../components/LiveTop';
 import MessageInput from '../components/Message';
 import Camera from '../components/camera';
-import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function Live() {
   const [facing, setFacing] = useState('back');
-  const [nickname, setNickname] = useState('');
-  const router = useRouter();
-
-  useEffect(() => {
-    const fetchNickname = async () => {
-      const storedNickname = await AsyncStorage.getItem('nickname');
-      setNickname(storedNickname || '');
-    };
-
-    fetchNickname();
-  }, []);
+  const [clientId, setClientId] = useState(null);
+  const [host, setHost] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [ws, setWs] = useState(null);
 
   const toggleCameraFacing = () => {
     setFacing((current) => (current === 'back' ? 'front' : 'back'));
   };
 
-  const startLiveStream = () => {
-    if (!nickname) {
-      Alert.alert('오류', '닉네임 정보가 없습니다.');
-      return;
+  useEffect(() => {
+    const fetchClientIdAndHost = async () => {
+      try {
+        const storedClientId = await AsyncStorage.getItem('nickname');
+        const storedHost = await AsyncStorage.getItem('host');
+        if (storedClientId && storedHost) {
+          setClientId(storedClientId);
+          setHost(storedHost);
+        } else {
+          console.error('ClientId or Host is missing');
+        }
+      } catch (error) {
+        console.error('Failed to retrieve clientId or host from AsyncStorage', error);
+      }
+    };
+
+    fetchClientIdAndHost();
+  }, []);
+
+  useEffect(() => {
+    let socket;
+    if (clientId && host) {
+      const wsUrl = `ws://192.168.162.32:8000/ws/${host}/${clientId}`;
+      socket = new WebSocket(wsUrl);
+
+      socket.onopen = () => {
+        console.log('WebSocket connection opened');
+      };
+
+      socket.onmessage = (event) => {
+        const newMessage = event.data;
+        setMessages(prevMessages => [...prevMessages, newMessage]);
+      };
+
+      socket.onerror = (error) => {
+        console.error('WebSocket error: ', error.message);
+      };
+
+      socket.onclose = () => {
+        console.log('WebSocket connection closed');
+      };
+
+      setWs(socket);
     }
 
-    fetch('http://192.168.1.182:8000/start-live', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ nickname }),
-    })
-    .then(response => {
-      if (response.ok) {
-        Alert.alert('라이브 시작', `${nickname}님의 라이브가 시작되었습니다.`);
-        router.push('main'); // 라이브 시작 후 메인 화면으로 이동
-      } else {
-        response.json().then(data => Alert.alert('오류', data.detail));
+    // Clean up WebSocket on component unmount
+    return () => {
+      if (socket) {
+        socket.close();
       }
-    })
-    .catch(error => console.error('라이브 스트리밍 오류:', error));
+    };
+  }, [clientId, host]);
+
+  const sendMessage = (message) => {
+    if (ws && ws.readyState === WebSocket.OPEN && message.trim().length > 0) {
+      ws.send(message);
+    } else {
+      console.error('WebSocket is not open or message is empty');
+    }
   };
 
   return (
     <View style={styles.container}>
       <Camera facing={facing} />
-      <Button title="라이브 시작" onPress={startLiveStream} />
       <TopBar onCameraToggle={toggleCameraFacing} />
       <View style={styles.messageContainer}>
-        <MessageInput />
+        <MessageInput messages={messages} onSendMessage={sendMessage} />
       </View>
     </View>
   );

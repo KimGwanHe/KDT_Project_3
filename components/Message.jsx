@@ -1,72 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, FlatList, Keyboard, Animated } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Keyboard, Animated, Platform } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 
-export default function MessageInput() {
+export default function MessageInput({ messages, onSendMessage }) {
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([]);
-  const [ws, setWs] = useState(null);
   const [keyboardOffset] = useState(new Animated.Value(0));
+  const [displayMessages, setDisplayMessages] = useState([]);
 
   useEffect(() => {
-    const socket = new WebSocket('ws://127.0.0.1:8000/ws/{Client}');
-
-    socket.onopen = () => {
-      console.log("채팅방에 들어갔습니다.");
-    };
-
-    socket.onmessage = (event) => {
-      const newMessage = event.data;
-      setMessages(prevMessages => [...prevMessages, newMessage]);
-    };
-
-    socket.onclose = () => {
-      console.log("채팅방을 나갔습니다.");
-    };
-
-    socket.onerror = (error) => {
-      console.log("WebSocket 오류:", error);
-    };
-
-    setWs(socket);
-
-    return () => {
-      socket.close();
-    };
-  }, []);
+    // 최신 5개의 메시지로 업데이트
+    setDisplayMessages(messages.slice(-5));
+  }, [messages]);
 
   useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      'keyboardDidShow',
-      (event) => {
-        Animated.timing(keyboardOffset, {
-          duration: 100,
-          toValue: -event.endCoordinates.height,
-          useNativeDriver: false,
-        }).start();
-      }
-    );
+    if (Platform.OS === 'ios') {
+      // iOS 전용 키보드 이벤트 핸들러
+      const keyboardDidShowListener = Keyboard.addListener(
+        'keyboardDidShow',
+        (event) => {
+          Animated.timing(keyboardOffset, {
+            duration: 100,
+            toValue: -event.endCoordinates.height,
+            useNativeDriver: false,
+          }).start();
+        }
+      );
 
-    const keyboardDidHideListener = Keyboard.addListener(
-      'keyboardDidHide',
-      () => {
-        Animated.timing(keyboardOffset, {
-          duration: 100,
-          toValue: 0,
-          useNativeDriver: false,
-        }).start();
-      }
-    );
+      const keyboardDidHideListener = Keyboard.addListener(
+        'keyboardDidHide',
+        () => {
+          Animated.timing(keyboardOffset, {
+            duration: 100,
+            toValue: 0,
+            useNativeDriver: false,
+          }).start();
+        }
+      );
 
-    return () => {
-      keyboardDidHideListener.remove();
-      keyboardDidShowListener.remove();
-    };
+      return () => {
+        keyboardDidHideListener.remove();
+        keyboardDidShowListener.remove();
+      };
+    }
   }, [keyboardOffset]);
 
-  const sendMessage = () => {
-    if (ws && message.trim().length > 0) {
-      ws.send(message);
+  const handleSend = () => {
+    if (message.trim().length > 0) {
+      onSendMessage(message);
       setMessage("");
     }
   };
@@ -75,7 +55,8 @@ export default function MessageInput() {
     <Animated.View style={[styles.messageContainer, { transform: [{ translateY: keyboardOffset }] }]}>
       <View style={styles.messageContainer}>
         <FlatList
-          data={messages}
+          data={displayMessages}
+          extraData={displayMessages} // 강제 업데이트를 위해 추가
           renderItem={({ item }) => (
             <View style={styles.messageBubble}>
               <Text style={styles.messageText}>{item}</Text>
@@ -85,10 +66,13 @@ export default function MessageInput() {
           style={styles.messageList}
         />
         <View style={styles.inputContainer}>
-          <TextInput 
-            placeholder="메시지 입력..." style={styles.textInput} value={message} onChangeText={setMessage}
+          <TextInput
+            placeholder="메시지 입력..."
+            style={styles.textInput}
+            value={message}
+            onChangeText={setMessage}
           />
-          <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
+          <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
             <FontAwesome name="paper-plane" size={24} color="white" />
           </TouchableOpacity>
         </View>

@@ -1,59 +1,100 @@
-from fastapi import FastAPI, HTTPException, Request, Depends, Header
-from pydantic import BaseModel
-from passlib.context import CryptContext
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request, Depends, Header
+from typing import Dict, List
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+from collections import defaultdict
+from typing import Optional
 from pymongo import MongoClient
 from pymongo.collection import Collection
-from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from passlib.context import CryptContext
 import jwt
 import datetime
-from typing import Optional
-
-# FastAPI 앱 초기화
+import os
 app = FastAPI()
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost", 
-        "http://127.0.0.1",  
-        "http://192.168.162.32:8081", 
-        "exp://192.168.162.32:8081"  
-    ], 
+    allow_origins=["*"],  # 모든 도메인에서의 접근을 허용합니다.
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+connections = defaultdict(list)
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[str, List[WebSocket]] = {}
+    async def connect(self, websocket: WebSocket, room: str):
+        await websocket.accept()
+        if room not in self.active_connections:
+            self.active_connections[room] = []
+        self.active_connections[room].append(websocket)
+    async def disconnect(self, websocket: WebSocket, room: str):
+        if room in self.active_connections:
+            self.active_connections[room].remove(websocket)
+            if not self.active_connections[room]:
+                del self.active_connections[room]
+    async def broadcast(self, message: str, room: str):
+        if room in self.active_connections:
+            for connection in self.active_connections[room]:
+                await connection.send_text(message)
+    async def close_room(self, room: str):
+        """방을 닫고 모든 연결을 종료"""
+        if room in self.active_connections:
+            for connection in self.active_connections[room]:
+                await connection.close()
+            del self.active_connections[room]
+manager = ConnectionManager()
+# 자기 닉네임이랑 클릭한 닉네임을 반환받아서 각각 전달 => 클릭한 닉네임의 이름의 서버에 입장 그리고 자신이 채팅치는 닉네임은 자기자신의 닉네임(세션스토리지에 담겨있는 닉네임)
+@app.websocket("/ws/{host}/{client_id}")
+async def websocket_endpoint(websocket: WebSocket, host: str, client_id: str):
+    print('서버 호출')
+    room = host
+    await manager.connect(websocket, room)
+    connections[room].append(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            await manager.broadcast(f"{client_id}: {data}", room)
+    except WebSocketDisconnect:
+        await manager.disconnect(websocket, room)
+        await manager.broadcast(f"{client_id} left the chat", room)
+        print(f"{client_id} left the chat", room)
+        print(room)
+        if client_id == room:
+            await manager.close_room(room)
+            del connections[room]
+@app.get("/connections")
+def get_connections():
+    return {
+        server_name: [str(websocket.client) for websocket in websockets]
+        for server_name, websockets in connections.items()
+        }
+# ==========================================================
 # 비밀번호 해시와 JWT 토큰 설정
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = "abcd1234"  
+SECRET_KEY = "abcd1234"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
-
 # MongoDB 설정
 client = MongoClient("mongodb+srv://leesarah721:rXYZRi8SDYz7skmH@cluster0.s6fyzfr.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 db = client["3rd-project"]
 collection: Collection = db["user"]
-
 # Pydantic 모델
 class User(BaseModel):
     nickname: str
     password: str
-
 class LoginRequest(BaseModel):
     nickname: str
     password: str
-
 class NicknameRequest(BaseModel):
     nickname: str
-
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
-
 def get_current_user(token: str = Header(...)):
     try:
         if token.startswith("Bearer "):
@@ -65,7 +106,6 @@ def get_current_user(token: str = Header(...)):
         return username
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
-
 @app.get("/test-connection")
 async def test_connection():
     try:
@@ -73,7 +113,6 @@ async def test_connection():
         return {"message": "MongoDB connection successful!"}
     except Exception as e:
         return {"message": "MongoDB connection failed!", "error": str(e)}
-    
 @app.post("/user/check-nickname")
 async def check_nickname(nickname_request: NicknameRequest):
     # 요청 본문을 직접 받아서 처리
@@ -85,20 +124,17 @@ async def check_nickname(nickname_request: NicknameRequest):
     if existing_user:
         raise HTTPException(status_code=409, detail="중복 닉네임")
     return {"available": True, "message": "Nickname is available."}
-
 @app.post("/user/register")
 async def register(user: User):
     existing_user = collection.find_one({"nickname": user.nickname})
     if existing_user:
         raise HTTPException(status_code=400, detail="User already exists")
-    
     hashed_password = pwd_context.hash(user.password)
     user_dict = user.model_dump()
     user_dict["password"] = hashed_password
     collection.insert_one(user_dict)
     print(f"User registered: Nickname: {user.nickname}, Password (hashed): {hashed_password}")
     return {"message": "User registered successfully"}
-
 @app.post("/user/login")
 async def login(request: LoginRequest):
     user = collection.find_one({"nickname": request.nickname})
@@ -108,12 +144,10 @@ async def login(request: LoginRequest):
         return {"access_token": access_token, "token_type": "bearer"}
     else:
         raise HTTPException(status_code=401, detail="Invalid credentials")
-
 @app.post("/user/logout")
 async def logout():
     # 클라이언트 측에서 토큰을 삭제하도록 유도
     return {"message": "Logout successful. Please delete the token on the client side."}
-
 @app.delete("/user/delete")
 async def delete_account(request: Request):
     auth_header = request.headers.get('Authorization')
@@ -125,40 +159,13 @@ async def delete_account(request: Request):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="User not found")
     return {"message": "Account deleted successfully"}
-
 @app.post("/user/check-nickname")
 async def check_nickname(nickname: str):
     existing_user = collection.find_one({"nickname": nickname})
     if existing_user:
         return {"available": False}
     return {"available": True}
-
 # ==========================================================
-
-live_streams = []
-
-class LiveStream(BaseModel):
-    nickname: str
-
-@app.post("/start-live")
-async def start_live(stream: LiveStream):
-    # 이미 방송 중인 사용자인지 확인
-    if any(s['nickname'] == stream.nickname for s in live_streams):
-        raise HTTPException(status_code=400, detail="이미 방송 중입니다.")
-    
-    # 새로운 방송 추가
-    live_streams.append(stream.model_dump())
-    return {"message": f"{stream.nickname}님의 라이브 방송이 시작되었습니다."}
-
-@app.post("/end-live")
-async def end_live(stream: LiveStream):
-    # 해당 방송을 종료 (리스트에서 삭제)
-    global live_streams
-    live_streams = [s for s in live_streams if s['nickname'] != stream.nickname]
-    
-    return {"message": f"{stream.nickname}님의 라이브 방송이 종료되었습니다."}
-
-@app.get("/live-streams")
-async def get_live_streams():
-    # 현재 방송 중인 사용자 목록 반환
-    return {"live_streams": live_streams}
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

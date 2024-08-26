@@ -1,29 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, ScrollView, Image, StyleSheet, Platform, View, Text, TouchableOpacity, Alert } from 'react-native';
+import { SafeAreaView, ScrollView, Image, StyleSheet, Platform, View, Text, TouchableOpacity, Alert, FlatList } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 
 import Header from '../components/Header';
 import LiveStreamCard from '../components/Livelist';
 import BottomTab from '../components/BottomTab';
 import Logo from '../components/Logo';
 
+// ------------------------------------------------------------
+
+const getClientId = async () => {
+  try {
+    const clientId = await AsyncStorage.getItem('nickname');
+    if (clientId !== null) {
+      console.log('ClientId retrieved:', clientId);
+      return clientId;
+    } 
+  } catch (error) {
+    console.error('Failed to retrieve clientId', error);
+    return null;
+  }
+};
+
+// getClientId 함수를 호출하여 값을 가져옵니다.
+getClientId();
+
+// ------------------------------------------------------------
+
 export default function Main() {
   const router = useRouter();
-  const [nickname, setNickname] = useState('');
-  const [liveStreams, setLiveStreams] = useState([]);
+  const navigation = useNavigation();
+  const [connections, setConnections] = useState([]);
 
   useEffect(() => {
-    // 로그인한 사용자의 닉네임을 가져옵니다.
-    const fetchNickname = async () => {
-      const storedNickname = await AsyncStorage.getItem('nickname');
-      setNickname(storedNickname || '');
-    };
-
-    fetchNickname();
-
     // 서버에서 현재 라이브 스트림 목록을 가져옵니다.
-    fetch('http://192.168.1.182:8000/live-streams')
+    fetch('http://192.168.162.32:8000/connections')
       .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
@@ -31,24 +44,31 @@ export default function Main() {
         return response.json();
       })
       .then(data => {
-        if (data && data.live_streams) {
-          setLiveStreams(data.live_streams);
+        console.log(data)
+        if (data) {
+          setConnections(data);
         } else {
           console.error('Invalid data format:', data);
-          setLiveStreams([]);
         }
       })
       .catch(error => {
         console.error('Error fetching live streams:', error);
-        setLiveStreams([]);
+        // setLiveStreams([]);
       });
   }, []);
 
-  const joinLiveStream = (nickname) => {
-    router.push({
-      pathname: 'LiveStreamView',
-      params: { nickname },
-    });
+  const handleAddPress1 = async (serverName) => {
+    try {
+      // AsyncStorage에서 clientId 값을 가져옴
+      const clientId = await AsyncStorage.getItem('nickname');
+  
+      // clientId를 포함하여 Live 화면으로 이동
+      console.log('Live', { host: clientId })
+      await AsyncStorage.setItem('host', serverName);
+      navigation.navigate('Live');
+    } catch (error) {
+      console.error('Failed to retrieve clientId from AsyncStorage', error);
+    }
   };
 
   return (
@@ -62,20 +82,17 @@ export default function Main() {
       <ScrollView contentContainerStyle={styles.content}>
         <Header />
         <Text style={styles.headerText}>실시간 방송</Text>
-
-        {/* 라이브 스트림 리스트 */}
-        {liveStreams.map((stream, index) => (
+      
+      {/* 서버 리스트를 LiveStreamCard로 렌더링 */}
+      {Object.entries(connections).map(([serverName, addresses]) => (
           <LiveStreamCard 
-            key={index} 
-            nickname={stream.nickname} 
-            onJoin={() => joinLiveStream(stream.nickname)} 
+            key={serverName || index}
+            servername={serverName} 
+            addresses={addresses} 
+            onconnect={handleAddPress1} 
           />
         ))}
-      </ScrollView>
-
-      {/* 라이브 시작 버튼 */}
-      <TouchableOpacity style={styles.addButton} onPress={() => router.push('Live')}>
-      </TouchableOpacity>
+        </ScrollView>
 
       {/* Tab 기능 */}
       <BottomTab />
