@@ -9,19 +9,53 @@ import { useRouter } from 'expo-router'
 import { hp, wp } from '../helpers/common'
 import Input from '../components/Input'
 import Button from '../components/Button'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Login = () => {
     const router = useRouter();
-    const emailRef = useRef("");
+    const nicknameRef = useRef("");
     const passwordRef = useRef("")
-    const [loading, setloading] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const onSubmit = async() => {
-      if(!emailRef.current || !passwordRef.current){
+      if(!nicknameRef.current || !passwordRef.current){
           Alert.alert('로그인','모든 칸을 채워주세요!');
           return
       }
-    }
+      
+      setLoading(true);
+
+        try {
+            const response = await fetch('http://192.168.162.32:8000/user/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    nickname: nicknameRef.current,
+                    password: passwordRef.current,
+                }),
+            });
+
+            
+            if (response.ok) { 
+              const data = await response.json();
+              await AsyncStorage.setItem('token', data.access_token);
+              await AsyncStorage.setItem('nickname', nicknameRef.current); // 닉네임 저장
+              console.log('Token:', data.access_token);
+              router.push('main'); // 로그인 성공 시 페이지 이동
+          } else {
+            const data = await response.json();
+              // 응답이 OK가 아닐 때의 오류 처리
+            Alert.alert('로그인 실패', data.detail || '해당 계정이 없습니다!');
+          }
+      } catch (error) {
+          console.error('Network Error:', error);
+          Alert.alert('로그인 실패', '해당 계정이 없습니다!');
+      } finally {
+          setLoading(false);
+      }
+  };
 
   return (
     <ScreenWrapper bg="white">
@@ -39,13 +73,14 @@ const Login = () => {
           계속하려면 로그인해 주세요.
           </Text>
           <Input
-            icon={<Icon name="mail" size={26} strokeWidth={1.6}/>}
-            placeholder='이메일을 입력해주세요'
-            onChangeText={value=>emailRef.current = value}
+            icon={<Icon name="user" size={26} strokeWidth={1.6}/>}
+            placeholder='닉네임을 입력해주세요'
+            onChangeText={value=>nicknameRef.current = value}
             />
           <Input
             icon={<Icon name="lock" size={26} strokeWidth={1.6}/>}
             placeholder='비밀번호를 입력해주세요'
+            secureTextEntry
             onChangeText={value=>passwordRef.current = value}
             />
             <Text style={styles.forgotPassword}>

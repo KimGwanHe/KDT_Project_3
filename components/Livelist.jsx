@@ -1,16 +1,15 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
 
-export default function LiveStreamCard({ streamerName }) {
+export default function LiveStreamCard({ nickname, onJoin }) {
   return (
-    <View style={styles.card}>
+    <TouchableOpacity onPress={onJoin} style={styles.card}>
       <Image source={require('../assets/images/Liveimage.png')} style={styles.liveImage} />
-      <Text style={styles.streamerName}>{streamerName} 님</Text>
-      <TouchableOpacity style={styles.playButton}>
-      <Image source={require('../assets/images/play.png')} style={styles.playImage} />
+      <Text style={styles.streamerName}>{nickname} 님</Text>
+      <TouchableOpacity style={styles.playButton} onPress={onJoin}>
+        <Image source={require('../assets/images/play.png')} style={styles.playImage} />
       </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -36,8 +35,10 @@ const styles = StyleSheet.create({
   },
   playButton: {
     backgroundColor: 'black',
-    padding: 0,
+    padding: 10,
     borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   playImage: {
     width: 35,

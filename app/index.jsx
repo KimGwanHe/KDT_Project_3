@@ -1,71 +1,94 @@
-import React from 'react';
-import { SafeAreaView, ScrollView, Image, StyleSheet, Platform, View, Text, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native'
+import React from 'react'
+import ScreenWrapper from '../components/ScreenWrapper'
+import { StatusBar } from 'expo-status-bar'
+import { hp, wp } from '../helpers/common'
+import { theme } from '../constants/theme'
+import Button from '../components/Button'
+import { useRouter } from 'expo-router'
 
-import Header from '../components/Header';
-import LiveStreamCard from '../components/Livelist';
-import BottomTab from '../components/BottomTab';
-import Logo from '../components/Logo';
-
-export default function App() {
-  const router  = useRouter();
-
+const Welcome = () => {
+    const router = useRouter();
   return (
-    <SafeAreaView style={styles.container}>
-      {/* 로고를 절대 위치로 고정 */}
-      <View style={styles.logoContainer}>
-        <Logo />
-      </View>
-      
-      {/* 메인 콘텐츠 */}
-      <ScrollView contentContainerStyle={styles.content}>
-        <Header />
-        <Text style={styles.headerText}>실시간 방송</Text>
-        <LiveStreamCard streamerName="FOX" />
-        <LiveStreamCard streamerName="DOG" />
-      </ScrollView>
-
-      {/* Tab 기능 */}
-      <BottomTab />
-    </SafeAreaView>
-  );
+    <ScreenWrapper bg="white">
+        <StatusBar style="dark"/>
+        <View style={styles.container}>
+            {/* title */}     
+            <View style={{gap:20, width: '80%', alignItems: 'center' }}>
+            <Text style={styles.title}> PIP </Text>
+            <Text style={styles.puncline}> 
+            어디서나 자유롭게 소통하고{'\n'}
+            개인정보가 안전하게 보호되는 방송
+          </Text>
+          </View>   
+          {/* welcome image */}
+          <Image style={styles.welcomeImage} resizeMode='contain' source={require('../assets/images/welcome.png')}/>
+  
+          {/* footer */}   
+          <View style={styles.footer}>
+            <Button
+            title="시작하기"
+            buttonStyle={{marginHorizontal: wp(3)}}
+            onPress={()=>router.push('login')}
+            />
+            <View style={styles.bottomTextContainer}>
+              <Text style={styles.loginText}>
+               이미 계정이 있습니다!
+               </Text>
+               <Pressable onPress={()=>router.push('login')}>
+                <Text style={[styles.loginText, {color: theme.colors.primaryDark, fontWeight: theme.fonts.semibold}]}>
+                  로그인
+                </Text>
+               </Pressable>
+            </View>  
+          </View>  
+        </View>
+    </ScreenWrapper>
+  )
 }
 
+export default Welcome
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#707070',
-  },
-  logoContainer: {
-    marginTop: 50,
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-    zIndex: 1000,
-    backgroundColor: 'white',
-  },
-  content: {
-    padding: 20,
-    marginTop: 50,
-  },
-  headerText: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#FAFF0F',
-    marginBottom: 20,
-  },
-  addButton: {
-    position: 'absolute',
-    bottom: 80, // BottomTab 위에 배치되도록 설정
-    right: 20,
-    backgroundColor: '#000',
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 1000,
-  },
-});
+    container: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: 'white',
+        marginHorizontal: wp(4),
+        paddingVertical: hp(19),
+    },
+    welcomeImage: {
+      height: hp(50),
+      width: wp(120),
+      alignSelf: 'center',
+    },
+    title: {
+      color: theme.colors.text,
+      fontSize: hp(9),
+      textAlign: 'center',
+      fontWeight: theme.fonts.extraBold,
+    },
+    punchline: {
+      textAlign: "center",
+      paddingHorizontal: wp(5),
+      fontSize: hp(4),
+      color: theme.colors.text,
+    },
+    footer: {
+      gap: 10,
+      width: '100%',
+    },
+    bottomTextContainer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      gap: 10,
+    },
+    loginText: {
+      textAlign: "center",
+      color: theme.colors.text,
+      fontSize: hp(3.3),
+      marginTop: hp(1)
+    }
+})

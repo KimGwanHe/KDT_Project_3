@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 
 export default function BottomTab() {
   const navigation = useNavigation();
@@ -20,7 +20,7 @@ export default function BottomTab() {
   };
 
   const handleHomePress = () => {
-    navigation.replace('index');
+    navigation.replace('main');
   };
 
   return (
@@ -39,6 +39,9 @@ export default function BottomTab() {
     </View>
   );
 }
+// {/* 라이브 시작 버튼 */}
+// <TouchableOpacity style={styles.addButton} onPress={() => router.push('Live')}>
+// </TouchableOpacity>
 
 const styles = StyleSheet.create({
   container: {

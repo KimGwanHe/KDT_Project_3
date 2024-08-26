@@ -9,7 +9,7 @@ export default function TopBar({ onCameraToggle }) {
 
   const handleConfirm = () => {
     setModalVisible(false);
-    navigation.navigate('index');
+    navigation.navigate('main');
   };
 
   const handleCancel = () => {
